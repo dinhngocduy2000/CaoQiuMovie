@@ -54,7 +54,7 @@ const HomeScreen = (props: Props) => {
       setGenres(res.genres);
       console.log('GENRE LIST: ', res.genres);
     } catch (err) {
-      console.log('ERROR: ', err);
+      console.log('ERROR FETCHING GENRE: ', err);
     } finally {
       console.log('DONE FETCHING!');
     }
