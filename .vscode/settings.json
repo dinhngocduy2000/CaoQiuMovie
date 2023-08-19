@@ -1,0 +1,6 @@
+{
+    "editor.formatOnSave": true,
+    "editor.wordWrap": "on",
+    "editor.formatOnPaste": false,
+    "editor.formatOnType": false
+}
