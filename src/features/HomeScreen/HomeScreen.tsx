@@ -12,8 +12,10 @@ import {
   TouchableHighlight,
   TouchableOpacity,
   FlatList,
+  ImageBackground,
+  Animated,
 } from 'react-native';
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import Carousel from 'react-native-reanimated-carousel';
 import {Svg, SvgXml} from 'react-native-svg';
 import svgs from '../assets/svg/svg_tabbar';
@@ -26,19 +28,30 @@ import {
   NOW_PLAYING_RESULT,
 } from '../../libraries/types/now_playing_res';
 import {genre, genre_list} from '../../libraries/types/genre_list';
+import {POPULAR_MOVIE} from '../../libraries/types/popular_list';
+import MovieTag from '../../libraries/components/MovieTags/movieTag';
+import {StackHeaderProps} from '@react-navigation/stack';
+import LinearGradient from 'react-native-linear-gradient';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 type Props = {};
 
-const HomeScreen = (props: Props) => {
+const HomeScreen = ({navigation}: any) => {
   const width = Dimensions.get('window').width;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
   const height = Dimensions.get('window').height;
-  const movieCategory = ['action', 'thriller', 'crime'];
   const [genres, setGenres] = useState<genre[]>([]);
   const [nowPlaying, setNowPlaying] = useState<NOW_PLAYING_RESULT[]>([]);
+  const insets = useSafeAreaInsets();
+  const [upcoming, setUpcoming] = useState<NOW_PLAYING_RESULT[]>([]);
+  const [isFocus, setIsFocus] = useState<boolean>(true);
+  const [popularList, setPopularList] = useState<NOW_PLAYING_RESULT[]>([]);
+  const [selectedMovie, setSelectedMovie] = useState<NOW_PLAYING_RESULT>();
   const fetchNowPlaying = async () => {
     const data = {language: 'en-US', page: 1};
     try {
       const res: NOW_PLAYING = await axios_get(api_url.MOVIE_NOW_PLAYING, data);
       setNowPlaying(res.results);
+      setSelectedMovie(res.results[0]);
       console.log('NOW PLAYING MOVIES: ', res.results);
     } catch (err) {
       console.log('ERROR: ', err);
@@ -60,6 +73,32 @@ const HomeScreen = (props: Props) => {
     }
   };
 
+  const fetchPopularList = async () => {
+    const data = {language: 'en-US', page: '1'};
+    try {
+      const res: POPULAR_MOVIE = await axios_get(api_url.MOVIE_POPULAR, data);
+      setPopularList(res.results);
+      console.log('POPULAR MOVIES: ', res);
+    } catch (err: any) {
+      console.log('ERROR FETCHING POPULAR LIST: ', err);
+    } finally {
+      console.log('DONE FETCHING POPULAR LIST...');
+    }
+  };
+
+  const fetchUpcomingList = async () => {
+    const data = {language: 'en-US', page: '1'};
+    try {
+      const res: NOW_PLAYING = await axios_get(api_url.MOVIE_UPCOMING, data);
+      setUpcoming(res.results);
+      console.log('POPULAR MOVIES: ', res);
+    } catch (err: any) {
+      console.log('ERROR FETCHING POPULAR LIST: ', err);
+    } finally {
+      console.log('DONE FETCHING POPULAR LIST...');
+    }
+  };
+
   const convertMovieGenre = (movieGenres: number[]): genre[] => {
     const result: any[] = [];
 
@@ -78,18 +117,80 @@ const HomeScreen = (props: Props) => {
   useEffect(() => {
     fetchNowPlaying();
     fetchGenreList();
+    fetchPopularList();
+    fetchUpcomingList();
   }, []);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      setIsFocus(true);
+      console.log('IS FOCUSING');
+    });
+
+    return unsubscribe;
+  }, [navigation]);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('blur', () => {
+      setIsFocus(false);
+      console.log('IS BLURING');
+    });
+
+    return unsubscribe;
+  }, [navigation]);
+
+  //   useEffect(()=>{
+  //     Animated.timing(opacity, {
+  //         toValue: 1,
+  //         duration: 300,
+  //         easing: Easing.spring,
+  //         useNativeDriver: true
+  //     }).start(()=>{
+  //         setPreviousImage(props.source);
+  //         opacity.setValue(0);
+  //     })
+  // }, [props.source])
+  useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 2000,
+      useNativeDriver: true,
+    }).start();
+  }, [fadeAnim]);
   return (
-    <SafeAreaView style={styles.safe_area_ctn}>
-      <ScrollView keyboardDismissMode="on-drag" style={styles.home_ctn}>
-        <View style={styles.header_ctn}>
+    <View style={styles.safe_area_ctn}>
+      <ScrollView keyboardDismissMode="on-drag" style={[styles.home_ctn]}>
+        <Animated.View
+          style={{
+            opacity: fadeAnim, // Bind opacity to animated value
+          }}>
+          <ImageBackground
+            fadeDuration={2}
+            style={[
+              {
+                height: height / 3,
+                width: width,
+                position: 'absolute',
+              },
+            ]}
+            blurRadius={3}
+            // resizeMode="contain"
+            source={{
+              uri: IMAGE_URL + '/w300' + selectedMovie?.backdrop_path,
+            }}>
+            <LinearGradient
+              colors={['#00000000', '#000000']}
+              style={{height: '100%', width: '100%'}}></LinearGradient>
+          </ImageBackground>
+        </Animated.View>
+        <View style={[styles.header_ctn, {paddingTop: insets.top}]}>
           <TouchableWithoutFeedback
             onPress={Keyboard.dismiss}
             accessible={false}>
             <View style={styles.search_ctn}>
               <TextInput
                 placeholder="Search your Movies..."
-                placeholderTextColor={'#FFFFFF52'}
+                placeholderTextColor={'white'}
                 style={styles.search_input}
                 returnKeyType="done"
               />
@@ -110,19 +211,26 @@ const HomeScreen = (props: Props) => {
             width={width}
             height={800}
             style={{marginVertical: -60}}
-            autoPlay={true}
+            autoPlay={isFocus === true ? true : false}
             data={nowPlaying}
             scrollAnimationDuration={1000}
             panGestureHandlerProps={{
               activeOffsetX: [-10, 10],
             }}
-            autoPlayInterval={3000}
+            autoPlayInterval={5000}
             mode="parallax"
-            onSnapToItem={index =>
-              console.log('current index:', nowPlaying[index])
-            }
+            onSnapToItem={index => {
+              setSelectedMovie(nowPlaying[index]);
+              console.log('current index:', nowPlaying[index]);
+            }}
             renderItem={({index}) => (
-              <TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => {
+                  setIsFocus(false);
+                  navigation.push('MovieDetail', {
+                    movieId: nowPlaying[index].id,
+                  });
+                }}>
                 <View style={styles.carousel_view}>
                   <Image
                     style={styles.carousel_image}
@@ -142,21 +250,9 @@ const HomeScreen = (props: Props) => {
                       {nowPlaying[index].title}
                     </Text>
                     {genres.length > 0 && (
-                      <View
-                        style={{
-                          flexDirection: 'row',
-                          justifyContent: 'center',
-                          alignItems: 'center',
-                          flexWrap: 'wrap',
-                        }}>
-                        {convertMovieGenre(nowPlaying[index].genre_ids).map(
-                          (genre: genre, number: number) => (
-                            <View style={styles.categoryView} key={genre.id}>
-                              <Text style={{color: 'white'}}>{genre.name}</Text>
-                            </View>
-                          ),
-                        )}
-                      </View>
+                      <MovieTag
+                        tags={convertMovieGenre(nowPlaying[index].genre_ids)}
+                      />
                     )}
                   </View>
                 </View>
@@ -166,52 +262,100 @@ const HomeScreen = (props: Props) => {
         </View>
         <View>
           <Text style={styles.text_title}>Popular</Text>
-          <FlatList
-            data={movieArrays}
-            keyExtractor={item => item.id}
-            horizontal
-            style={{paddingHorizontal: 30, marginTop: 10}}
-            renderItem={item => (
-              <TouchableOpacity style={styles.movie_ctn}>
-                <View>
-                  <Image source={item.item.image} />
-                  <Text
-                    style={[
-                      styles.movie_title,
-                      {fontSize: 14, fontWeight: '600', marginTop: 15},
-                    ]}>
-                    {item.item.title}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            )}
-          />
+          {popularList.length > 0 && (
+            <FlatList
+              data={popularList}
+              keyExtractor={item => item.id.toString()}
+              horizontal
+              style={{paddingHorizontal: 30, marginTop: 10}}
+              renderItem={item => {
+                return (
+                  <TouchableOpacity
+                    onPress={() =>
+                      navigation.push('MovieDetail', {
+                        movieId: item.item.id,
+                      })
+                    }
+                    style={styles.movie_ctn}>
+                    <View style={{flex: 1}}>
+                      <Image
+                        source={{
+                          uri: IMAGE_URL + '/w300' + item.item.poster_path,
+                        }}
+                        style={{
+                          borderRadius: 30,
+                          width: 150,
+                          minHeight: 250,
+                        }}
+                      />
+                      <Text
+                        style={[
+                          styles.movie_title,
+                          {
+                            fontSize: 14,
+                            fontWeight: '600',
+                            marginTop: 15,
+                            flex: 1,
+                            flexWrap: 'wrap',
+                          },
+                        ]}>
+                        {item.item.title}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              }}
+            />
+          )}
         </View>
         <View>
           <Text style={styles.text_title}>Upcoming</Text>
           <FlatList
-            data={movieArrays}
-            keyExtractor={item => item.id}
+            data={upcoming}
+            keyExtractor={item => item.id.toString()}
             horizontal
             style={{paddingHorizontal: 30, marginTop: 10}}
-            renderItem={item => (
-              <TouchableOpacity style={styles.movie_ctn}>
-                <View>
-                  <Image source={item.item.image} />
-                  <Text
-                    style={[
-                      styles.movie_title,
-                      {fontSize: 14, fontWeight: '600', marginTop: 15},
-                    ]}>
-                    {item.item.title}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            )}
+            renderItem={item => {
+              return (
+                <TouchableOpacity
+                  onPress={() => {
+                    navigation.removeListener;
+                    navigation.push('MovieDetail', {
+                      movieId: item.item.id,
+                    });
+                  }}
+                  style={styles.movie_ctn}>
+                  <View style={{flex: 1}}>
+                    <Image
+                      source={{
+                        uri: IMAGE_URL + '/w300' + item.item.poster_path,
+                      }}
+                      style={{
+                        borderRadius: 30,
+                        width: 150,
+                        minHeight: 250,
+                      }}
+                    />
+                    <Text
+                      style={[
+                        styles.movie_title,
+                        {
+                          fontSize: 14,
+                          fontWeight: '600',
+                          marginTop: 15,
+                          flex: 1,
+                        },
+                      ]}>
+                      {item.item.title}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            }}
           />
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -224,7 +368,6 @@ const styles = StyleSheet.create({
   },
   home_ctn: {
     flex: 1,
-    // paddingTop: 10,
   },
   header_ctn: {
     paddingTop: 15,
@@ -232,8 +375,8 @@ const styles = StyleSheet.create({
   },
   search_ctn: {
     width: '100%',
-    borderColor: '#202020',
-    borderWidth: 1,
+    borderColor: 'white',
+    borderWidth: 2,
     height: 50,
     borderRadius: 16,
     position: 'relative',
@@ -262,14 +405,12 @@ const styles = StyleSheet.create({
   carousel_image: {
     flex: 4,
     width: '100%',
-    // resizeMode: 'contain',
     borderRadius: 30,
   },
   movie_info_view: {
     alignItems: 'center',
   },
   movie_rating: {
-    // flex: 1,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
@@ -289,17 +430,9 @@ const styles = StyleSheet.create({
     fontSize: 28,
     marginBottom: 10,
   },
-  categoryView: {
-    borderRadius: 10,
-    borderStyle: 'solid',
-    borderColor: 'rgba(255, 255, 255, 0.5)',
-    borderWidth: 1,
-    marginTop: 15,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    marginHorizontal: 20,
-  },
+
   movie_ctn: {
     marginRight: 25,
+    width: 150,
   },
 });

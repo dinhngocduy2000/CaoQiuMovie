@@ -2,34 +2,24 @@ import 'react-native-gesture-handler';
 import React from 'react';
 import type {PropsWithChildren} from 'react';
 import {
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
+  Animated,
+  Pressable,
   StyleSheet,
   Text,
   useColorScheme,
   View,
 } from 'react-native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
-import TabNavigator from './src/navigators/TabNavigator';
-import MovieDetail from './src/features/MovieDetail/MovieDetail';
-import SeatBookingScreen from './src/features/SeatBooking/SeatBookingScreen';
-import { NavigationContainer } from '@react-navigation/native';
+import {createStackNavigator} from '@react-navigation/stack';
+import {Colors} from 'react-native/Libraries/NewAppScreen';
+import {SafeAreaProvider} from 'react-native-safe-area-context';
+import RootComponent from './src/features/rootComponent/rootComponent';
 type SectionProps = PropsWithChildren<{
   title: string;
 }>;
 
 function Section({children, title}: SectionProps): JSX.Element {
   const isDarkMode = useColorScheme() === 'dark';
-  
+
   return (
     <View style={styles.sectionContainer}>
       <Text
@@ -53,25 +43,31 @@ function Section({children, title}: SectionProps): JSX.Element {
     </View>
   );
 }
-const Stack = createNativeStackNavigator();
-function App(): JSX.Element {
+
+const App = () => {
   const isDarkMode = useColorScheme() === 'dark';
+  // const insets = useSafeAreaInsets();
 
   const backgroundStyle = {
     backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
   };
-
+  const config: any = {
+    animation: 'spring',
+    config: {
+      stiffness: 1000,
+      damping: 500,
+      mass: 3,
+      overshootClamping: true,
+      restDisplacementThreshold: 0.01,
+      restSpeedThreshold: 0.01,
+    },
+  };
   return (
-      <NavigationContainer >
-        <StatusBar barStyle="light-content" />
-        <Stack.Navigator screenOptions={{headerShown:false}} >
-          <Stack.Screen options={{headerShown:false}} name='Tab' component={TabNavigator} />
-          <Stack.Screen options={{headerShown:false}} name ="MovieDetail" component={MovieDetail}/>
-          <Stack.Screen  options={{headerShown:false}} name='SeatBooking' component={SeatBookingScreen}/>
-        </Stack.Navigator>
-      </NavigationContainer>
+    <SafeAreaProvider style={{backgroundColor: 'black'}}>
+      <RootComponent />
+    </SafeAreaProvider>
   );
-}
+};
 
 const styles = StyleSheet.create({
   sectionContainer: {
