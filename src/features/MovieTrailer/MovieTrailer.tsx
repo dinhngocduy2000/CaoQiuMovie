@@ -26,7 +26,7 @@ const MovieTrailer = (props: Props) => {
       <Pressable
         style={[
           StyleSheet.absoluteFill,
-          {backgroundColor: 'rgba(0, 0, 0, 0.5)'},
+          {backgroundColor: 'rgba(0, 0, 0, 0.7)'},
         ]}
         onPress={navigation.goBack}
       />

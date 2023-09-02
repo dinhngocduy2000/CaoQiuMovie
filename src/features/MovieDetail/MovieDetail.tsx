@@ -188,7 +188,7 @@ const MovieDetail = (props: Props) => {
 
               <View
                 style={{
-                  width: '100%',
+                  width: '75%',
                   flex: 1,
                   alignItems: 'center',
                   justifyContent: 'center',
