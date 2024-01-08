@@ -1,19 +1,23 @@
 import {StyleSheet, Text, View} from 'react-native';
 import React from 'react';
-import Ionicons from 'react-native-vector-icons/Ionicons';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import HomeScreen from '../features/HomeScreen/HomeScreen';
 import MyTickets from '../features/MyTickets/MyTickets';
 import Profile from '../features/Profile/Profile';
 import {SvgUri, SvgXml} from 'react-native-svg';
-
-import {StatusBar} from 'react-native';
 import svgs from '../features/assets/svg/svg_tabbar';
+import SearchResultScreen from '../features/SearchResultScreen/SearchResultScreen';
+import {COLOR_ENUM} from '../libraries/ENUMS/ColorEnum';
 
 const Tab = createBottomTabNavigator();
-type Props = {};
+type Props = {
+  setInitRoute: any;
+};
 
-const TabNavigator = (props: Props) => {
+const TabNavigator = ({setInitRoute}: Props) => {
+  const RenderProfileScreen = () => {
+    return <Profile setInitRoute={setInitRoute} />;
+  };
   return (
     <Tab.Navigator
       screenOptions={({route}) => ({
@@ -26,18 +30,20 @@ const TabNavigator = (props: Props) => {
             iconName = svgs.profile_tabbar;
           } else if (route.name === 'MyTicket') {
             iconName = svgs.ticket_tabbar;
+          } else if (route.name === 'SearchResult') {
+            iconName = svgs.search_icon;
           }
           // You can return any component that you like here!
           return (
             <View
               style={{
-                borderRadius: 64 / 2,
-                width: 64,
+                borderRadius: 54 / 2,
+                width: 54,
                 display: 'flex',
                 justifyContent: 'center',
                 alignItems: 'center',
-                height: 64,
-                backgroundColor: focused ? '#FF5524' : 'black',
+                height: 54,
+                backgroundColor: focused ? '#FF5524' : COLOR_ENUM.DARK_MODE,
               }}>
               <SvgXml width={30} height={30} xml={iconName} />
             </View>
@@ -48,11 +54,11 @@ const TabNavigator = (props: Props) => {
         tabBarShowLabel: false,
 
         tabBarStyle: {
-          backgroundColor: 'black',
-          height: 120,
+          backgroundColor: COLOR_ENUM.DARK_MODE,
+          height: 90,
           display: 'flex',
           justifyContent: 'center',
-          padding: 15,
+          padding: 10,
           borderTopWidth: 0,
         },
       })}
@@ -64,13 +70,18 @@ const TabNavigator = (props: Props) => {
       />
       <Tab.Screen
         options={{headerShown: false}}
+        name="SearchResult"
+        component={SearchResultScreen}
+      />
+      <Tab.Screen
+        options={{headerShown: false}}
         name="MyTicket"
         component={MyTickets}
       />
       <Tab.Screen
         options={{headerShown: false}}
         name="Profile"
-        component={Profile}
+        component={RenderProfileScreen}
       />
     </Tab.Navigator>
   );

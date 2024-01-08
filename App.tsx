@@ -1,5 +1,5 @@
 import 'react-native-gesture-handler';
-import React from 'react';
+import React, {useEffect, useState} from 'react';
 import type {PropsWithChildren} from 'react';
 import {
   Animated,
@@ -13,6 +13,11 @@ import {createStackNavigator} from '@react-navigation/stack';
 import {Colors} from 'react-native/Libraries/NewAppScreen';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
 import RootComponent from './src/features/rootComponent/rootComponent';
+import {STORAGE_KEY} from './src/libraries/ENUMS/AsyncStorageKeys';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import LoginScreen from './src/features/LoginScreen/LoginScreen';
+import {COLOR_ENUM} from './src/libraries/ENUMS/ColorEnum';
+import SplashScreen from 'react-native-splash-screen';
 type SectionProps = PropsWithChildren<{
   title: string;
 }>;
@@ -47,7 +52,11 @@ function Section({children, title}: SectionProps): JSX.Element {
 const App = () => {
   const isDarkMode = useColorScheme() === 'dark';
   // const insets = useSafeAreaInsets();
-
+  useEffect(() => {
+    setTimeout(() => {
+      SplashScreen.hide();
+    }, 1000);
+  }, []);
   const backgroundStyle = {
     backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
   };
@@ -63,8 +72,8 @@ const App = () => {
     },
   };
   return (
-    <SafeAreaProvider style={{backgroundColor: 'black'}}>
-      <RootComponent />
+    <SafeAreaProvider style={{backgroundColor: COLOR_ENUM.DARK_MODE}}>
+      {<RootComponent />}
     </SafeAreaProvider>
   );
 };

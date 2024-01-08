@@ -1,26 +1,22 @@
 import {
-  SafeAreaView,
   Dimensions,
   StyleSheet,
   Text,
   View,
   Image,
-  TextInput,
   TouchableWithoutFeedback,
   Keyboard,
   ScrollView,
-  TouchableHighlight,
   TouchableOpacity,
   FlatList,
   ImageBackground,
   Animated,
+  RefreshControl,
 } from 'react-native';
 import React, {useEffect, useRef, useState} from 'react';
 import Carousel from 'react-native-reanimated-carousel';
 import {Svg, SvgXml} from 'react-native-svg';
-import svgs from '../assets/svg/svg_tabbar';
 import homeSVGs from '../assets/svg/svg_home';
-import movieArrays from './testData./testData';
 import {IMAGE_URL, axios_get} from '../../apiHelper/api';
 import {api_url} from '../../apiHelper/URL_ENUM';
 import {
@@ -30,23 +26,33 @@ import {
 import {genre, genre_list} from '../../libraries/types/genre_list';
 import {POPULAR_MOVIE} from '../../libraries/types/popular_list';
 import MovieTag from '../../libraries/components/MovieTags/movieTag';
-import {StackHeaderProps} from '@react-navigation/stack';
 import LinearGradient from 'react-native-linear-gradient';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import SearchInputComponent from '../../libraries/components/SearchInputs/SearchInputComponent';
+import MovieOverviewComponent from '../../libraries/components/MovieOverview/MovieOverviewComponent';
+import {COLOR_ENUM} from '../../libraries/ENUMS/ColorEnum';
+import {fadeIn, fadeOut} from '../../libraries/utils/fadeAnimation';
 type Props = {};
 
 const HomeScreen = ({navigation}: any) => {
   const width = Dimensions.get('window').width;
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const fadeAnim2 = useRef(new Animated.Value(0)).current;
+
   const height = Dimensions.get('window').height;
   const [genres, setGenres] = useState<genre[]>([]);
   const [nowPlaying, setNowPlaying] = useState<NOW_PLAYING_RESULT[]>([]);
+  const [searchTitle, setSearchTitle] = useState<string>('');
   const insets = useSafeAreaInsets();
   const [upcoming, setUpcoming] = useState<NOW_PLAYING_RESULT[]>([]);
   const [isFocus, setIsFocus] = useState<boolean>(true);
   const [popularList, setPopularList] = useState<NOW_PLAYING_RESULT[]>([]);
   const [selectedMovie, setSelectedMovie] = useState<NOW_PLAYING_RESULT>();
+  const [refreshing, setRefreshing] = useState<boolean>(false);
+  const windowHeight = Dimensions.get('window').height;
   const fetchNowPlaying = async () => {
+    console.log('START FETCHING...');
+
     const data = {language: 'en-US', page: 1};
     try {
       const res: NOW_PLAYING = await axios_get(api_url.MOVIE_NOW_PLAYING, data);
@@ -61,6 +67,7 @@ const HomeScreen = ({navigation}: any) => {
   };
 
   const fetchGenreList = async () => {
+    console.log('START FETCHING...');
     const data = {language: 'en'};
     try {
       const res: genre_list = await axios_get(api_url.GENRE_LIST, data);
@@ -74,6 +81,7 @@ const HomeScreen = ({navigation}: any) => {
   };
 
   const fetchPopularList = async () => {
+    console.log('START FETCHING...');
     const data = {language: 'en-US', page: '1'};
     try {
       const res: POPULAR_MOVIE = await axios_get(api_url.MOVIE_POPULAR, data);
@@ -89,6 +97,8 @@ const HomeScreen = ({navigation}: any) => {
   const fetchUpcomingList = async () => {
     const data = {language: 'en-US', page: '1'};
     try {
+      console.log('START FETCHING...');
+
       const res: NOW_PLAYING = await axios_get(api_url.MOVIE_UPCOMING, data);
       setUpcoming(res.results);
       console.log('POPULAR MOVIES: ', res);
@@ -114,6 +124,11 @@ const HomeScreen = ({navigation}: any) => {
     return result;
   };
 
+  const handleSubmitSearch = () => {
+    console.log('SEARCHING');
+    navigation.navigate('SearchResult', {searchTitle: searchTitle});
+  };
+
   useEffect(() => {
     fetchNowPlaying();
     fetchGenreList();
@@ -124,6 +139,7 @@ const HomeScreen = ({navigation}: any) => {
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
       setIsFocus(true);
+      fadeIn(500, fadeAnim);
       console.log('IS FOCUSING');
     });
 
@@ -138,7 +154,17 @@ const HomeScreen = ({navigation}: any) => {
 
     return unsubscribe;
   }, [navigation]);
-
+  const onRefresh = React.useCallback(() => {
+    console.log('REFRESHING...');
+    setRefreshing(true);
+    fetchNowPlaying();
+    fetchGenreList();
+    fetchPopularList();
+    fetchUpcomingList();
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 3000);
+  }, []);
   //   useEffect(()=>{
   //     Animated.timing(opacity, {
   //         toValue: 1,
@@ -150,22 +176,41 @@ const HomeScreen = ({navigation}: any) => {
   //         opacity.setValue(0);
   //     })
   // }, [props.source])
-  useEffect(() => {
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 2000,
-      useNativeDriver: true,
-    }).start();
-  }, [fadeAnim]);
-  return (
+  // useEffect(() => {
+  //   fadeIn(500, fadeAnim);
+  // }, [selectedMovie]);
+  return refreshing ? (
+    <View
+      style={{
+        flex: 1,
+        alignItems: 'center',
+        backgroundColor: COLOR_ENUM.DARK_MODE,
+        justifyContent: 'center',
+        height: windowHeight,
+        width: '100%',
+      }}>
+      {/* <SvgXml xml={svgs.logo} width={200} height={200} /> */}
+      <Image
+        source={{
+          uri: 'https://media.tenor.com/RcX3hUY425kAAAAi/toothless-dragon-toothless.gif',
+        }}
+        style={{width: 400, height: 400}}
+      />
+      <Text style={{color: 'white', fontSize: 24}}>Refreshing...</Text>
+    </View>
+  ) : (
     <View style={styles.safe_area_ctn}>
-      <ScrollView keyboardDismissMode="on-drag" style={[styles.home_ctn]}>
+      <ScrollView
+        keyboardDismissMode="on-drag"
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+        style={[styles.home_ctn]}>
         <Animated.View
           style={{
             opacity: fadeAnim, // Bind opacity to animated value
           }}>
           <ImageBackground
-            fadeDuration={2}
             style={[
               {
                 height: height / 3,
@@ -174,12 +219,13 @@ const HomeScreen = ({navigation}: any) => {
               },
             ]}
             blurRadius={3}
+            onLoadEnd={() => fadeIn(100, fadeAnim)}
             // resizeMode="contain"
             source={{
               uri: IMAGE_URL + '/w300' + selectedMovie?.backdrop_path,
             }}>
             <LinearGradient
-              colors={['#00000000', '#000000']}
+              colors={['#00000000', COLOR_ENUM.DARK_MODE]}
               style={{height: '100%', width: '100%'}}></LinearGradient>
           </ImageBackground>
         </Animated.View>
@@ -187,21 +233,12 @@ const HomeScreen = ({navigation}: any) => {
           <TouchableWithoutFeedback
             onPress={Keyboard.dismiss}
             accessible={false}>
-            <View style={styles.search_ctn}>
-              <TextInput
-                placeholder="Search your Movies..."
-                placeholderTextColor={'white'}
-                style={styles.search_input}
-                returnKeyType="done"
-              />
-              <SvgXml
-                xml={svgs.search_icon}
-                onPress={() => console.log('SEARCH')}
-                width={20}
-                height={20}
-                style={{position: 'absolute', right: 30, top: 15}}
-              />
-            </View>
+            <SearchInputComponent
+              placeholder="Search your Movies..."
+              isSearch
+              onChangeText={setSearchTitle}
+              onSubmitEditing={handleSubmitSearch}
+            />
           </TouchableWithoutFeedback>
         </View>
         <View style={styles.carousel_ctn}>
@@ -223,6 +260,11 @@ const HomeScreen = ({navigation}: any) => {
               setSelectedMovie(nowPlaying[index]);
               console.log('current index:', nowPlaying[index]);
             }}
+            onScrollBegin={() => {
+              console.log('abc');
+              fadeOut(1000, fadeAnim);
+            }}
+            onScrollEnd={() => {}}
             renderItem={({index}) => (
               <TouchableOpacity
                 onPress={() => {
@@ -231,9 +273,11 @@ const HomeScreen = ({navigation}: any) => {
                     movieId: nowPlaying[index].id,
                   });
                 }}>
-                <View style={styles.carousel_view}>
+                <Animated.View
+                  style={[styles.carousel_view, {opacity: fadeAnim2}]}>
                   <Image
                     style={styles.carousel_image}
+                    onLoadEnd={() => fadeIn(500, fadeAnim2)}
                     source={{
                       uri: IMAGE_URL + '/w500' + nowPlaying[index].poster_path,
                     }}
@@ -255,7 +299,7 @@ const HomeScreen = ({navigation}: any) => {
                       />
                     )}
                   </View>
-                </View>
+                </Animated.View>
               </TouchableOpacity>
             )}
           />
@@ -270,39 +314,12 @@ const HomeScreen = ({navigation}: any) => {
               style={{paddingHorizontal: 30, marginTop: 10}}
               renderItem={item => {
                 return (
-                  <TouchableOpacity
-                    onPress={() =>
-                      navigation.push('MovieDetail', {
-                        movieId: item.item.id,
-                      })
-                    }
-                    style={styles.movie_ctn}>
-                    <View style={{flex: 1}}>
-                      <Image
-                        source={{
-                          uri: IMAGE_URL + '/w300' + item.item.poster_path,
-                        }}
-                        style={{
-                          borderRadius: 30,
-                          width: 150,
-                          minHeight: 250,
-                        }}
-                      />
-                      <Text
-                        style={[
-                          styles.movie_title,
-                          {
-                            fontSize: 14,
-                            fontWeight: '600',
-                            marginTop: 15,
-                            flex: 1,
-                            flexWrap: 'wrap',
-                          },
-                        ]}>
-                        {item.item.title}
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
+                  <MovieOverviewComponent
+                    navigation={navigation}
+                    movieId={item.item.id}
+                    title={item.item.title}
+                    posterPath={item.item.poster_path}
+                  />
                 );
               }}
             />
@@ -317,39 +334,12 @@ const HomeScreen = ({navigation}: any) => {
             style={{paddingHorizontal: 30, marginTop: 10}}
             renderItem={item => {
               return (
-                <TouchableOpacity
-                  onPress={() => {
-                    navigation.removeListener;
-                    navigation.push('MovieDetail', {
-                      movieId: item.item.id,
-                    });
-                  }}
-                  style={styles.movie_ctn}>
-                  <View style={{flex: 1}}>
-                    <Image
-                      source={{
-                        uri: IMAGE_URL + '/w300' + item.item.poster_path,
-                      }}
-                      style={{
-                        borderRadius: 30,
-                        width: 150,
-                        minHeight: 250,
-                      }}
-                    />
-                    <Text
-                      style={[
-                        styles.movie_title,
-                        {
-                          fontSize: 14,
-                          fontWeight: '600',
-                          marginTop: 15,
-                          flex: 1,
-                        },
-                      ]}>
-                      {item.item.title}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
+                <MovieOverviewComponent
+                  navigation={navigation}
+                  movieId={item.item.id}
+                  title={item.item.title}
+                  posterPath={item.item.poster_path}
+                />
               );
             }}
           />
@@ -364,7 +354,7 @@ export default HomeScreen;
 const styles = StyleSheet.create({
   safe_area_ctn: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: COLOR_ENUM.DARK_MODE,
   },
   home_ctn: {
     flex: 1,
@@ -380,6 +370,7 @@ const styles = StyleSheet.create({
     height: 50,
     borderRadius: 16,
     position: 'relative',
+    marginTop: 20,
   },
   search_input: {
     color: 'white',

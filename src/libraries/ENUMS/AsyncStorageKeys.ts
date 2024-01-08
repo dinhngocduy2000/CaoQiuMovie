@@ -1,0 +1,3 @@
+export const STORAGE_KEY= {
+    GET_SESSION_ID:"GET_SESSION_ID"
+}

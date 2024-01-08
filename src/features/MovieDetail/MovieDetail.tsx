@@ -1,10 +1,7 @@
 import {
   Animated,
-  FlatList,
   Image,
   ImageBackground,
-  Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -12,26 +9,21 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {IMAGE_URL, axios_get} from '../../apiHelper/api';
-import {api_url} from '../../apiHelper/URL_ENUM';
-import {
-  MovieDetails,
-  cast,
-  videos_result,
-} from '../../libraries/types/movie_detail';
+import {MovieDetails, videos_result} from '../../libraries/types/movie_detail';
 import {Dimensions} from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import {convertToHour} from '../../libraries/utils/convertMinutesToHours';
 import {SvgXml} from 'react-native-svg';
 import SVG_MovieDetail from '../assets/svg/svg_movieDetail';
-import {genre} from '../../libraries/types/genre_list';
 import MovieTag from '../../libraries/components/MovieTags/movieTag';
 import {ActivityIndicator} from 'react-native';
 import moment from 'moment';
 import homeSVGs from '../assets/svg/svg_home';
-import YouTube from 'react-native-youtube';
+import {FlatList} from 'react-native-gesture-handler';
+import {fadeIn} from '../../libraries/utils/fadeAnimation';
 type Props = {};
 
 const MovieDetail = (props: Props) => {
@@ -44,6 +36,8 @@ const MovieDetail = (props: Props) => {
   const windowHeight = Dimensions.get('window').height;
   const insets = useSafeAreaInsets();
   const av = new Animated.Value(0);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const fadeAnim2 = useRef(new Animated.Value(0)).current;
   av.addListener(() => {
     return;
   });
@@ -96,26 +90,32 @@ const MovieDetail = (props: Props) => {
           position: 'relative',
           width: '100%',
         }}>
-        <ImageBackground
-          style={[styles.header_background, {height: windowHeight}]}
-          onLoadStart={() => setIsLoading(true)}
-          onLoadEnd={() => {
-            setIsLoading(false);
-            console.log(
-              'LOADING ENDS',
-              movieDetails.videos.results.filter(
-                (video: videos_result) =>
-                  video.type === 'Trailer' && video.official === true,
-              ),
-            );
-          }}
-          source={{
-            uri: IMAGE_URL + '/original' + movieDetails?.backdrop_path,
-          }}>
-          <LinearGradient
-            colors={['#00000000', '#000000']}
-            style={{height: '100%', width: '100%'}}></LinearGradient>
-        </ImageBackground>
+        <Animated.View
+          style={[
+            styles.header_background,
+            {height: windowHeight, opacity: fadeAnim2},
+          ]}>
+          <ImageBackground
+            onLoadStart={() => setIsLoading(true)}
+            onLoadEnd={() => {
+              setIsLoading(false);
+              fadeIn(500, fadeAnim2);
+              console.log(
+                'LOADING ENDS',
+                movieDetails.videos.results.filter(
+                  (video: videos_result) =>
+                    video.type === 'Trailer' && video.official === true,
+                ),
+              );
+            }}
+            source={{
+              uri: IMAGE_URL + '/original' + movieDetails?.backdrop_path,
+            }}>
+            <LinearGradient
+              colors={['#00000000', '#000000']}
+              style={{height: '100%', width: '100%'}}></LinearGradient>
+          </ImageBackground>
+        </Animated.View>
         {loading && movieDetails ? (
           <View
             style={{
@@ -142,9 +142,10 @@ const MovieDetail = (props: Props) => {
                 width: windowWidth,
                 alignItems: 'center',
               }}>
-              <View
+              <Animated.View
                 style={{
                   width: '100%',
+                  opacity: fadeAnim,
                 }}>
                 <Image
                   source={{
@@ -153,6 +154,7 @@ const MovieDetail = (props: Props) => {
                   loadingIndicatorSource={{
                     uri: 'https://icons.iconarchive.com/icons/oxygen-icons.org/oxygen/128/Emotes-face-smile-icon.png',
                   }}
+                  onLoadEnd={() => fadeIn(500, fadeAnim)}
                   style={{
                     width: '100%',
                     height: 500,
@@ -184,7 +186,7 @@ const MovieDetail = (props: Props) => {
                     width={60}
                   />
                 </TouchableHighlight>
-              </View>
+              </Animated.View>
 
               <View
                 style={{
@@ -272,14 +274,20 @@ const MovieDetail = (props: Props) => {
                 {movieDetails?.overview}
               </Text>
             </View>
-            <View style={{width: '100%', paddingLeft: 23, marginBottom: 23}}>
+            <View
+              style={{
+                flex: 1,
+                width: windowWidth,
+                paddingLeft: 23,
+                marginBottom: 23,
+              }}>
               <Text style={{color: 'white', fontSize: 20, fontWeight: '700'}}>
                 Top Cast
               </Text>
               <FlatList
                 data={movieDetails?.credits.cast}
                 keyExtractor={item => item.credit_id}
-                style={{marginTop: 20}}
+                style={{marginTop: 20, flex: 1}}
                 horizontal
                 renderItem={item => {
                   return item.item.order < 10 ? (

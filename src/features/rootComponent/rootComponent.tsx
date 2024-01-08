@@ -1,19 +1,17 @@
 import {
-  Animated,
-  Pressable,
+  Platform,
+  SafeAreaView,
   StatusBar,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
-import React from 'react';
+import React, {useEffect, useState} from 'react';
 import {NavigationContainer} from '@react-navigation/native';
 import {
   StackHeaderProps,
   CardStyleInterpolators,
   createStackNavigator,
-  TransitionSpecs,
-  TransitionPresets,
 } from '@react-navigation/stack';
 import TabNavigator from '../../navigators/TabNavigator';
 import MovieDetail from '../MovieDetail/MovieDetail';
@@ -21,7 +19,14 @@ import SeatBookingScreen from '../SeatBooking/SeatBookingScreen';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {TouchableOpacity} from 'react-native-gesture-handler';
 import MovieTrailer from '../MovieTrailer/MovieTrailer';
-import ModalOverlay from '../../libraries/components/ModalOverlay/ModalOverlay';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {STORAGE_KEY} from '../../libraries/ENUMS/AsyncStorageKeys';
+import LoginScreen from '../LoginScreen/LoginScreen';
+import {SvgXml} from 'react-native-svg';
+import svgs from '../assets/svg/svg_tabbar';
+import SearchInputComponent from '../../libraries/components/SearchInputs/SearchInputComponent';
+import {loginWithToken} from '../../apiHelper/api';
+import Profile from '../Profile/Profile';
 
 type Props = {};
 
@@ -29,11 +34,30 @@ const RootComponent = (props: Props) => {
   const Stack = createStackNavigator();
   const insets = useSafeAreaInsets();
 
+  const [initialRoute, setInitialRoute] = useState<string | null>();
+  const checkSessionId = async () => {
+    try {
+      const sessionId = await AsyncStorage.getItem(STORAGE_KEY.GET_SESSION_ID);
+      console.log('GET SESSION ID: ', sessionId);
+      setInitialRoute(sessionId);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  useEffect(() => {
+    checkSessionId();
+  }, []);
+  const RenderLogin = () => {
+    return <LoginScreen setInitRoute={setInitialRoute} />;
+  };
+  const RenderTab = () => {
+    return <TabNavigator setInitRoute={setInitialRoute} />;
+  };
   return (
     <NavigationContainer>
       <StatusBar barStyle="light-content" />
       <Stack.Navigator
-        initialRouteName="Tab"
+        initialRouteName={'Tab'}
         screenOptions={{
           gestureEnabled: true,
           animationEnabled: true,
@@ -45,7 +69,7 @@ const RootComponent = (props: Props) => {
               <View
                 style={{
                   backgroundColor: 'transparent',
-                  paddingTop: insets.top,
+                  paddingTop: Platform.OS === 'ios' ? insets.top : 25,
                   paddingLeft: 35,
                   position: 'absolute',
                 }}>
@@ -53,7 +77,14 @@ const RootComponent = (props: Props) => {
                   onPress={navigation.goBack}
                   style={styles.header_outer}>
                   <View style={styles.header_inner}>
-                    <Text style={{color: 'white', fontSize: 14}}>×</Text>
+                    <Text
+                      style={{
+                        color: 'white',
+                        fontSize: 13,
+                        fontWeight: 'bold',
+                      }}>
+                      ×
+                    </Text>
                   </View>
                 </TouchableOpacity>
               </View>
@@ -63,44 +94,55 @@ const RootComponent = (props: Props) => {
             height: 20,
           },
         }}>
-        <Stack.Screen
-          options={{headerShown: false}}
-          name="Tab"
-          component={TabNavigator}
-        />
-        <Stack.Group
-          screenOptions={{
-            cardStyleInterpolator:
-              CardStyleInterpolators.forScaleFromCenterAndroid,
-            presentation: 'transparentModal',
-          }}>
+        {initialRoute === null ? (
           <Stack.Screen
-            name="MovieTrailer"
-            component={MovieTrailer}
-            options={{
-              cardStyleInterpolator:
-                CardStyleInterpolators.forScaleFromCenterAndroid,
-            }}
+            options={{headerShown: false}}
+            name="LoginScreen"
+            component={RenderLogin}
           />
-        </Stack.Group>
-        <Stack.Screen
-          options={{
-            freezeOnBlur: true,
-            cardStyleInterpolator:
-              CardStyleInterpolators.forScaleFromCenterAndroid,
-          }}
-          name="MovieDetail"
-          component={MovieDetail}
-        />
+        ) : (
+          <>
+            <Stack.Screen
+              options={{headerShown: false}}
+              name="Tab"
+              component={RenderTab}
+            />
 
-        <Stack.Screen
-          name="SeatBooking"
-          component={SeatBookingScreen}
-          options={{
-            cardStyleInterpolator:
-              CardStyleInterpolators.forRevealFromBottomAndroid,
-          }}
-        />
+            <Stack.Group
+              screenOptions={{
+                cardStyleInterpolator:
+                  CardStyleInterpolators.forScaleFromCenterAndroid,
+                presentation: 'transparentModal',
+              }}>
+              <Stack.Screen
+                name="MovieTrailer"
+                component={MovieTrailer}
+                options={{
+                  cardStyleInterpolator:
+                    CardStyleInterpolators.forScaleFromCenterAndroid,
+                }}
+              />
+            </Stack.Group>
+            <Stack.Screen
+              options={{
+                freezeOnBlur: true,
+                cardStyleInterpolator:
+                  CardStyleInterpolators.forScaleFromCenterAndroid,
+              }}
+              name="MovieDetail"
+              component={MovieDetail}
+            />
+
+            <Stack.Screen
+              name="SeatBooking"
+              component={SeatBookingScreen}
+              options={{
+                cardStyleInterpolator:
+                  CardStyleInterpolators.forRevealFromBottomAndroid,
+              }}
+            />
+          </>
+        )}
       </Stack.Navigator>
       {/* <Stack.Navigator>
         <Stack.Screen name="Home" component={HomeScreen} />
@@ -133,9 +175,9 @@ export default RootComponent;
 
 const styles = StyleSheet.create({
   header_inner: {
-    height: 20,
-    width: 20,
-    borderRadius: 10,
+    height: 22,
+    width: 22,
+    borderRadius: 11,
     alignItems: 'center',
     justifyContent: 'center',
     borderColor: 'white',

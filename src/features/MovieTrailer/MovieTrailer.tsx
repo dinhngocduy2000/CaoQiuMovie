@@ -1,19 +1,13 @@
-import {
-  ActivityIndicator,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import {ActivityIndicator, Pressable, StyleSheet, View} from 'react-native';
 import React, {useEffect, useState} from 'react';
-import YouTube from 'react-native-youtube';
-
+import YoutubePlayer from 'react-native-youtube-iframe';
 type Props = {};
 
 const MovieTrailer = (props: Props) => {
   const {navigation, route}: any = props;
   const {videoKey} = route.params;
   const [loading, setLoading] = useState<boolean>(true);
+  console.log(videoKey);
 
   useEffect(() => {
     setTimeout(() => {
@@ -33,21 +27,14 @@ const MovieTrailer = (props: Props) => {
       <View
         style={{
           width: '100%',
+          height: 400,
         }}>
         {loading ? (
           <ActivityIndicator size={'large'} color={'#ff5524'} />
         ) : (
-          <YouTube
-            apiKey="AIzaSyAXen-VYL0QrSuNUSQa-yNSTzyGn6FsiWA"
-            videoId={videoKey} // The YouTube video ID
-            play // control playback of video with true/false
-            modestbranding={true}
-            fullscreen={true} // control whether the video should play in fullscreen or inline
-            // onReady={e => this.setState({ isReady: true })}
-            // onChangeQuality={e => this.setState({ quality: e.quality })}
-            // onError={e => this.setState({ error: e.error })}
-            style={{height: 400}}
-          />
+          <View>
+            <YoutubePlayer height={400} play={true} videoId={videoKey} />
+          </View>
         )}
       </View>
     </View>
