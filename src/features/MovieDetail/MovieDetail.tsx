@@ -13,7 +13,6 @@ import React, {useEffect, useRef, useState} from 'react';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {IMAGE_URL, axios_get} from '../../apiHelper/api';
 import {MovieDetails, videos_result} from '../../libraries/types/movie_detail';
-import {Dimensions} from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import {convertToHour} from '../../libraries/utils/convertMinutesToHours';
 import {SvgXml} from 'react-native-svg';
@@ -24,6 +23,9 @@ import moment from 'moment';
 import homeSVGs from '../assets/svg/svg_home';
 import {FlatList} from 'react-native-gesture-handler';
 import {fadeIn} from '../../libraries/utils/fadeAnimation';
+import {COLOR_ENUM} from '../../libraries/ENUMS/ColorEnum';
+import {getScreenWidth} from '../../libraries/utils/getScreenWidth';
+import {getScreenHeight} from '../../libraries/utils/getScreenHeight';
 type Props = {};
 
 const MovieDetail = (props: Props) => {
@@ -31,9 +33,6 @@ const MovieDetail = (props: Props) => {
   const {movieId} = route.params;
   const [movieDetails, setMovieDetails] = useState<MovieDetails>();
   const [loading, setIsLoading] = useState<boolean>(true);
-  const [playTrailer, setPlayTrailer] = useState<boolean>(false);
-  const windowWidth = Dimensions.get('window').width;
-  const windowHeight = Dimensions.get('window').height;
   const insets = useSafeAreaInsets();
   const av = new Animated.Value(0);
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -60,7 +59,7 @@ const MovieDetail = (props: Props) => {
     fetchMovieDetail();
   }, []);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const unsubscribe = navigation.addListener('gestureStart', (e: Event) => {
       // Do somethingnav
       navigation.removeListener;
@@ -76,14 +75,14 @@ const MovieDetail = (props: Props) => {
         justifyContent: 'center',
       }}
       style={{
-        backgroundColor: 'black',
-        width: windowWidth,
+        backgroundColor: COLOR_ENUM.DARK_MODE,
+        width: getScreenWidth(),
         flex: 1,
       }}>
       <View
         style={{
           alignItems: 'center',
-          backgroundColor: 'black',
+          backgroundColor: COLOR_ENUM.DARK_MODE,
           flex: 1,
           paddingBottom: insets.bottom,
           justifyContent: 'center',
@@ -93,7 +92,7 @@ const MovieDetail = (props: Props) => {
         <Animated.View
           style={[
             styles.header_background,
-            {height: windowHeight, opacity: fadeAnim2},
+            {height: getScreenHeight(), opacity: fadeAnim2},
           ]}>
           <ImageBackground
             onLoadStart={() => setIsLoading(true)}
@@ -112,7 +111,7 @@ const MovieDetail = (props: Props) => {
               uri: IMAGE_URL + '/original' + movieDetails?.backdrop_path,
             }}>
             <LinearGradient
-              colors={['#00000000', '#000000']}
+              colors={['#00000000', COLOR_ENUM.DARK_MODE]}
               style={{height: '100%', width: '100%'}}></LinearGradient>
           </ImageBackground>
         </Animated.View>
@@ -121,9 +120,9 @@ const MovieDetail = (props: Props) => {
             style={{
               flex: 1,
               alignItems: 'center',
-              backgroundColor: 'black',
+              backgroundColor: COLOR_ENUM.DARK_MODE,
               justifyContent: 'center',
-              height: windowHeight,
+              height: getScreenHeight(),
               width: '100%',
             }}>
             <ActivityIndicator size={'large'} color={'#FF5524'} />
@@ -133,13 +132,13 @@ const MovieDetail = (props: Props) => {
             style={{
               flex: 1,
               alignItems: 'center',
-              width: windowWidth,
+              width: getScreenWidth(),
               paddingTop: insets.top + 80,
             }}>
             <View
               style={{
                 flex: 1,
-                width: windowWidth,
+                width: getScreenWidth(),
                 alignItems: 'center',
               }}>
               <Animated.View
@@ -178,7 +177,7 @@ const MovieDetail = (props: Props) => {
                     borderRadius: 30,
                     position: 'absolute',
                     top: '45%',
-                    left: windowWidth / 2 - 30,
+                    left: getScreenWidth() / 2 - 30,
                   }}>
                   <SvgXml
                     xml={SVG_MovieDetail.play_video}
@@ -241,13 +240,13 @@ const MovieDetail = (props: Props) => {
                 </Text>
               </View>
             </View>
-            <View style={{width: windowWidth, padding: 23}}>
+            <View style={{width: getScreenWidth(), padding: 23}}>
               <View
                 style={{
                   flexDirection: 'row',
                   alignItems: 'center',
                   marginBottom: 5,
-                  width: windowWidth / 2,
+                  width: getScreenWidth() / 2,
                   justifyContent: 'space-between',
                 }}>
                 <View style={{flexDirection: 'row', alignItems: 'center'}}>
@@ -277,7 +276,7 @@ const MovieDetail = (props: Props) => {
             <View
               style={{
                 flex: 1,
-                width: windowWidth,
+                width: getScreenWidth(),
                 paddingLeft: 23,
                 marginBottom: 23,
               }}>
@@ -321,7 +320,9 @@ const MovieDetail = (props: Props) => {
               onPress={() => {
                 console.log('HI');
                 navigation.push('SeatBooking', {
-                  videoKey: movieDetails.videos.results[0].key,
+                  movieName: movieDetails.title,
+                  moviePoster:
+                    IMAGE_URL + '/original' + movieDetails?.poster_path,
                 });
               }}>
               <View

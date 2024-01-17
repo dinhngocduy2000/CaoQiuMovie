@@ -1,6 +1,4 @@
 import {
-  ActivityIndicator,
-  Dimensions,
   Image,
   SafeAreaView,
   StyleSheet,
@@ -9,19 +7,17 @@ import {
   View,
 } from 'react-native';
 import React, {useEffect, useState} from 'react';
-import {SvgXml} from 'react-native-svg';
 import SearchInputComponent from '../../libraries/components/SearchInputs/SearchInputComponent';
-import svgs from '../assets/svg/svg_tabbar';
-import {getSessionId, loginWithToken} from '../../apiHelper/api';
+import {loginWithToken} from '../../apiHelper/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {STORAGE_KEY} from '../../libraries/ENUMS/AsyncStorageKeys';
 import {COLOR_ENUM} from '../../libraries/ENUMS/ColorEnum';
 import LinearGradient from 'react-native-linear-gradient';
+import {getScreenHeight} from '../../libraries/utils/getScreenHeight';
 
 type Props = {};
 
 const LoginScreen = ({navigation, setInitRoute}: any) => {
-  const windowHeight = Dimensions.get('window').height;
   const [username, setUserName] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
@@ -56,7 +52,7 @@ const LoginScreen = ({navigation, setInitRoute}: any) => {
         alignItems: 'center',
         backgroundColor: COLOR_ENUM.DARK_MODE,
         justifyContent: 'center',
-        height: windowHeight,
+        height: getScreenHeight(),
         width: '100%',
       }}>
       {/* <SvgXml xml={svgs.logo} width={200} height={200} /> */}

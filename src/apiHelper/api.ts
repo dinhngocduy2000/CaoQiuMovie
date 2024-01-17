@@ -5,7 +5,8 @@ export const IMAGE_URL = "https://image.tmdb.org/t/p"
 const HEADERS = "Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI2OGQxZWMzOGNhZjBmOTFlNWU3Yjg0ZjBkOGFiNWNkYyIsInN1YiI6IjY0ZTAxZDhkNWFiODFhMDEzOTFhMmRkYiIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.PVjpYD_yoeXMrhs563dcy09A15GLe_-4NdQBL02Q-sc"
 
 export const axios_get  = async (url:string,params?:any)=>{
-  console.log("INITIATE FETCHING");
+  console.log("INITIATE FETCHING; "+ url + " " +params);
+  console.log("check params: ",params);
   
     const options = {
         method: 'GET',

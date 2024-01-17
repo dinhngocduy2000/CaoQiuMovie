@@ -6,12 +6,13 @@ import {
   Text,
   View,
 } from 'react-native';
-import React, {useEffect, useState} from 'react';
-import {NavigationContainer} from '@react-navigation/native';
+import React, {ReactNode, useEffect, useState} from 'react';
+import {NavigationContainer, ParamListBase} from '@react-navigation/native';
 import {
   StackHeaderProps,
   CardStyleInterpolators,
   createStackNavigator,
+  StackNavigationProp,
 } from '@react-navigation/stack';
 import TabNavigator from '../../navigators/TabNavigator';
 import MovieDetail from '../MovieDetail/MovieDetail';
@@ -22,22 +23,19 @@ import MovieTrailer from '../MovieTrailer/MovieTrailer';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {STORAGE_KEY} from '../../libraries/ENUMS/AsyncStorageKeys';
 import LoginScreen from '../LoginScreen/LoginScreen';
-import {SvgXml} from 'react-native-svg';
-import svgs from '../assets/svg/svg_tabbar';
-import SearchInputComponent from '../../libraries/components/SearchInputs/SearchInputComponent';
-import {loginWithToken} from '../../apiHelper/api';
-import Profile from '../Profile/Profile';
-
+import {RootStackParamList} from '../../libraries/types/root-stack-param';
 type Props = {};
 
 const RootComponent = (props: Props) => {
-  const Stack = createStackNavigator();
+  const Stack = createStackNavigator<RootStackParamList>();
   const insets = useSafeAreaInsets();
 
   const [initialRoute, setInitialRoute] = useState<string | null>();
   const checkSessionId = async () => {
     try {
-      const sessionId = await AsyncStorage.getItem(STORAGE_KEY.GET_SESSION_ID);
+      const sessionId: string | null = await AsyncStorage.getItem(
+        STORAGE_KEY.GET_SESSION_ID,
+      );
       console.log('GET SESSION ID: ', sessionId);
       setInitialRoute(sessionId);
     } catch (error) {
@@ -47,12 +45,46 @@ const RootComponent = (props: Props) => {
   useEffect(() => {
     checkSessionId();
   }, []);
-  const RenderLogin = () => {
+  const RenderLogin = (): React.ReactNode => {
     return <LoginScreen setInitRoute={setInitialRoute} />;
   };
-  const RenderTab = () => {
+  const RenderTab = (): React.ReactNode => {
     return <TabNavigator setInitRoute={setInitialRoute} />;
   };
+  const renderBackNavigator = (
+    navigation: StackNavigationProp<ParamListBase, string, undefined>,
+    back:
+      | {
+          title: string;
+        }
+      | undefined,
+  ): any => {
+    return (
+      <View
+        style={{
+          backgroundColor: 'transparent',
+          paddingTop: Platform.OS === 'ios' ? insets.top : 25,
+          paddingLeft: 35,
+          position: 'absolute',
+        }}>
+        <TouchableOpacity
+          onPress={navigation.goBack}
+          style={styles.header_outer}>
+          <View style={styles.header_inner}>
+            <Text
+              style={{
+                color: 'white',
+                fontSize: 13,
+                fontWeight: 'bold',
+              }}>
+              ×
+            </Text>
+          </View>
+        </TouchableOpacity>
+      </View>
+    );
+  };
+
   return (
     <NavigationContainer>
       <StatusBar barStyle="light-content" />
@@ -65,30 +97,7 @@ const RootComponent = (props: Props) => {
           header: ({navigation, back}: StackHeaderProps) => {
             console.log(back);
 
-            return back ? (
-              <View
-                style={{
-                  backgroundColor: 'transparent',
-                  paddingTop: Platform.OS === 'ios' ? insets.top : 25,
-                  paddingLeft: 35,
-                  position: 'absolute',
-                }}>
-                <TouchableOpacity
-                  onPress={navigation.goBack}
-                  style={styles.header_outer}>
-                  <View style={styles.header_inner}>
-                    <Text
-                      style={{
-                        color: 'white',
-                        fontSize: 13,
-                        fontWeight: 'bold',
-                      }}>
-                      ×
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              </View>
-            ) : null;
+            return back ? renderBackNavigator(navigation, back) : null;
           },
           headerStyle: {
             height: 20,
@@ -103,7 +112,7 @@ const RootComponent = (props: Props) => {
         ) : (
           <>
             <Stack.Screen
-              options={{headerShown: false}}
+              options={{headerShown: false, title: 'HOME'}}
               name="Tab"
               component={RenderTab}
             />
@@ -118,6 +127,7 @@ const RootComponent = (props: Props) => {
                 name="MovieTrailer"
                 component={MovieTrailer}
                 options={{
+                  title: 'trailer',
                   cardStyleInterpolator:
                     CardStyleInterpolators.forScaleFromCenterAndroid,
                 }}
@@ -126,6 +136,7 @@ const RootComponent = (props: Props) => {
             <Stack.Screen
               options={{
                 freezeOnBlur: true,
+                title: 'MOVIE DETAIL',
                 cardStyleInterpolator:
                   CardStyleInterpolators.forScaleFromCenterAndroid,
               }}
@@ -137,6 +148,7 @@ const RootComponent = (props: Props) => {
               name="SeatBooking"
               component={SeatBookingScreen}
               options={{
+                title: 'BOOKING',
                 cardStyleInterpolator:
                   CardStyleInterpolators.forRevealFromBottomAndroid,
               }}

@@ -11,7 +11,7 @@ import {COLOR_ENUM} from '../libraries/ENUMS/ColorEnum';
 
 const Tab = createBottomTabNavigator();
 type Props = {
-  setInitRoute: any;
+  setInitRoute: React.Dispatch<React.SetStateAction<string | null | undefined>>;
 };
 
 const TabNavigator = ({setInitRoute}: Props) => {

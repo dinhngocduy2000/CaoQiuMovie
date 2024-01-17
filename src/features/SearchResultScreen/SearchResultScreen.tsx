@@ -15,13 +15,12 @@ import {NOW_PLAYING_RESULT} from '../../libraries/types/now_playing_res';
 import MovieOverviewComponent from '../../libraries/components/MovieOverview/MovieOverviewComponent';
 import {ActivityIndicator} from 'react-native';
 import {COLOR_ENUM} from '../../libraries/ENUMS/ColorEnum';
+import {getScreenHeight} from '../../libraries/utils/getScreenHeight';
+import {getScreenWidth} from '../../libraries/utils/getScreenWidth';
 
 type Props = {};
 
 const SearchResultScreen = (props: Props) => {
-  const width = Dimensions.get('window').width;
-  const windowHeight = Dimensions.get('window').height;
-
   const {route, navigation}: any = props;
   const [searchText, setSearchText] = useState<string>('');
   const {searchTitle} = route?.params || '';
@@ -74,7 +73,7 @@ const SearchResultScreen = (props: Props) => {
             alignItems: 'center',
             backgroundColor: COLOR_ENUM.DARK_MODE,
             justifyContent: 'center',
-            height: windowHeight,
+            height: getScreenHeight(),
             width: '100%',
           }}>
           <ActivityIndicator size={'large'} color={'#FF5524'} />
@@ -92,7 +91,7 @@ const SearchResultScreen = (props: Props) => {
               navigation={navigation}
               movieId={item.item.id}
               marginBottom={30}
-              imageWidth={width / 2.5}
+              imageWidth={getScreenWidth() / 2.5}
               marginRight={0}
               posterPath={item.item.poster_path}
               title={item.item.title}
