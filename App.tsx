@@ -18,6 +18,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import LoginScreen from './src/features/LoginScreen/LoginScreen';
 import {COLOR_ENUM} from './src/libraries/ENUMS/ColorEnum';
 import SplashScreen from 'react-native-splash-screen';
+import {Provider} from 'react-redux';
+import {store} from './src/redux/store';
 type SectionProps = PropsWithChildren<{
   title: string;
 }>;
@@ -73,7 +75,7 @@ const App = () => {
   };
   return (
     <SafeAreaProvider style={{backgroundColor: COLOR_ENUM.DARK_MODE}}>
-      {<RootComponent />}
+      <Provider store={store}>{<RootComponent />}</Provider>
     </SafeAreaProvider>
   );
 };

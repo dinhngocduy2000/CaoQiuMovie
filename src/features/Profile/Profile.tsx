@@ -1,8 +1,6 @@
 import {
   ActivityIndicator,
-  Dimensions,
   Image,
-  SafeAreaView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -15,29 +13,29 @@ import {
   BASE_URL,
   IMAGE_URL,
   axios_get,
+  fetchUserDetail,
   logOutWithToken,
 } from '../../apiHelper/api';
-import {SvgXml} from 'react-native-svg';
-import svgs from '../assets/svg/svg_tabbar';
 import {COLOR_ENUM} from '../../libraries/ENUMS/ColorEnum';
-import NfcManager, {NfcTech} from 'react-native-nfc-manager';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {api_url} from '../../apiHelper/URL_ENUM';
-import {err} from 'react-native-svg/lib/typescript/xml';
 import axios from 'axios';
 import {USER_DETAIL} from '../../libraries/types/user_detail';
 import {getScreenHeight} from '../../libraries/utils/getScreenHeight';
+import {AccessToken} from '../../libraries/ENUMS/Access_Token';
+import {useAppDispatch, useAppSelector} from '../../redux/hooks';
+import {fetchProfileDetailThunk} from '../../redux/profileSlice/profileSlice';
 type Props = {
   setInitRoute: any;
 };
 // NfcManager.start();
 const Profile = ({setInitRoute}: Props) => {
   const [sessionId, setSessionId] = useState<string | null>('');
-  const [loading, setLoading] = useState<boolean>(false);
-  const [userDetail, setUserDetail] = useState<USER_DETAIL>();
+  const dispatch = useAppDispatch();
+  const profile = useAppSelector(state => state.profile.data);
+  const loading = useAppSelector(state => state.profile.loading);
   const insets = useSafeAreaInsets();
   const handleLogout = async () => {
-    setLoading(true);
+    // setLoading(true);
     try {
       const res = await logOutWithToken(sessionId || '');
       setInitRoute(null);
@@ -49,58 +47,25 @@ const Profile = ({setInitRoute}: Props) => {
   const fetchSessionId = async () => {
     try {
       const session_id = await AsyncStorage.getItem(STORAGE_KEY.GET_SESSION_ID);
-
+      if (!profile) {
+        dispatch(
+          fetchProfileDetailThunk({
+            sessionId: sessionId || '',
+            accessToken: AccessToken.ACCESS_TOKEN,
+          }),
+        );
+      }
       setSessionId(session_id);
     } catch (error) {
       console.log(error);
     }
   };
-  const getUserDetails = async (session_id: string) => {
-    const options = {
-      method: 'GET',
-      url: 'https://api.themoviedb.org/3/account/20321210',
-      params: {session_id: session_id},
-      headers: {
-        accept: 'application/json',
-        Authorization:
-          'Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI2OGQxZWMzOGNhZjBmOTFlNWU3Yjg0ZjBkOGFiNWNkYyIsInN1YiI6IjY0ZTAxZDhkNWFiODFhMDEzOTFhMmRkYiIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.PVjpYD_yoeXMrhs563dcy09A15GLe_-4NdQBL02Q-sc',
-      },
-    };
 
-    axios
-      .request(options)
-      .then(function (response) {
-        console.log(response);
-        setUserDetail(response.data);
-      })
-      .catch(function (error) {
-        console.error(error);
-      });
-  };
-  // async function readNdef() {
-  //   try {
-  //     // register for the NFC tag with NDEF in it
-  //     await NfcManager.requestTechnology(NfcTech.Ndef);
-  //     // the resolved tag object will contain `ndefMessage` property
-  //     const tag = await NfcManager.getTag();
-  //     console.warn('Tag found', tag);
-  //   } catch (ex) {
-  //     console.warn('Oops!', ex);
-  //   } finally {
-  //     // stop the nfc scanning
-  //     NfcManager.cancelTechnologyRequest();
-  //   }
-  // }
   useEffect(() => {
     fetchSessionId();
   }, []);
-  useEffect(() => {
-    if (sessionId) {
-      getUserDetails(sessionId);
-    }
-  }, [sessionId]);
 
-  return !userDetail || loading ? (
+  return !profile || loading === 'loading' ? (
     <View
       style={{
         flex: 1,
@@ -136,16 +101,16 @@ const Profile = ({setInitRoute}: Props) => {
         <Image
           style={styles.avatar}
           source={{
-            uri: IMAGE_URL + '/original' + userDetail.avatar.tmdb.avatar_path,
+            uri: IMAGE_URL + '/original' + profile?.avatar.tmdb.avatar_path,
           }}
         />
       </View>
       <View style={styles.userDetail}>
         <Text style={[styles.userDetailInfo, styles.userDetailInfoName]}>
-          {userDetail.name}
+          {profile.name}
         </Text>
         <Text style={[styles.userDetailInfo, styles.userDetailInfoUserName]}>
-          {userDetail.username}
+          {profile.username}
         </Text>
       </View>
       <TouchableOpacity

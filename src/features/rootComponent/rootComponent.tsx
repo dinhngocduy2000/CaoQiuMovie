@@ -24,17 +24,27 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {STORAGE_KEY} from '../../libraries/ENUMS/AsyncStorageKeys';
 import LoginScreen from '../LoginScreen/LoginScreen';
 import {RootStackParamList} from '../../libraries/types/root-stack-param';
+import {useAppDispatch} from '../../redux/hooks';
+import {fetchProfileDetailThunk} from '../../redux/profileSlice/profileSlice';
+import {AccessToken} from '../../libraries/ENUMS/Access_Token';
 type Props = {};
 
 const RootComponent = (props: Props) => {
   const Stack = createStackNavigator<RootStackParamList>();
   const insets = useSafeAreaInsets();
-
+  const dispatch = useAppDispatch();
   const [initialRoute, setInitialRoute] = useState<string | null>();
+
   const checkSessionId = async () => {
     try {
       const sessionId: string | null = await AsyncStorage.getItem(
         STORAGE_KEY.GET_SESSION_ID,
+      );
+      await dispatch(
+        fetchProfileDetailThunk({
+          sessionId: sessionId || '',
+          accessToken: AccessToken.ACCESS_TOKEN,
+        }),
       );
       console.log('GET SESSION ID: ', sessionId);
       setInitialRoute(sessionId);
@@ -45,6 +55,7 @@ const RootComponent = (props: Props) => {
   useEffect(() => {
     checkSessionId();
   }, []);
+
   const RenderLogin = (): React.ReactNode => {
     return <LoginScreen setInitRoute={setInitialRoute} />;
   };

@@ -113,4 +113,30 @@ export const logOutWithToken =async (session_id:string) => {
     
   }
     
+
+}
+
+export const fetchUserDetail = async (session_id:string,accessToken:string) => {
+  console.log("FETCHING USER DETAIL:");
+  
+  const options = {
+    method: 'GET',
+    url: 'https://api.themoviedb.org/3/account/20321210',
+    params: {session_id: session_id},
+    headers: {
+      accept: 'application/json',
+      Authorization: accessToken,
+    },
+  };
+  try {
+    const response = await axios.request(options)
+    console.log("CHECK USER DETAIL DATA: " , response.data);
+    
+    return response.data
+
+  } catch (error) {
+    console.log("ERROR FETCHING USER DETAIL: ");
+    
+  }
+  
 }
